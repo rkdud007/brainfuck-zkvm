@@ -1,12 +1,9 @@
-use std::{
-    io::{Read, Stdin, Stdout, Write},
-    str::FromStr,
-};
+use std::io::{Read, Stdin, Stdout, Write};
 
-use crate::instruction::Instruction;
+use crate::instruction::{Instruction, InstructionType};
 
 pub struct Machine {
-    code: Vec<char>,
+    code: Vec<Instruction>,
     // instruction pointer
     ip: u64,
     memory: Vec<u8>,
@@ -21,7 +18,7 @@ pub struct Machine {
 }
 
 impl Machine {
-    pub fn new(code: Vec<char>, input: Stdin, output: Stdout) -> Machine {
+    pub fn new(code: Vec<Instruction>, input: Stdin, output: Stdout) -> Machine {
         Machine {
             code,
             ip: 0,
@@ -35,58 +32,39 @@ impl Machine {
 
     pub fn execute(self: &mut Machine) {
         while self.ip < self.code.len() as u64 {
-            let ins_char = self.code[self.ip as usize];
+            let ins = &self.code[self.ip as usize];
             // println!(
             //     "{}, {}, {}",
             //     ins_char, self.dp, self.memory[self.dp as usize]
             // );
-            let instruction = Instruction::from_str(ins_char.to_string().as_str());
-            if instruction.is_ok() {
-                match instruction.unwrap() {
-                    Instruction::IncrementDp => self.dp += 1,
-                    Instruction::DecrementDp => self.dp -= 1,
-                    Instruction::IncrementVal => self.memory[self.dp as usize] += 1,
-                    Instruction::DecrementVal => self.memory[self.dp as usize] -= 1,
-                    Instruction::Input => self.read_char(),
-                    Instruction::Output => self.write_char(),
-                    Instruction::JumpNext => {
-                        if self.memory[self.dp as usize] == 0 {
-                            let mut depth = 1;
-                            while depth != 0 {
-                                self.ip += 1;
-                                let instruction = Instruction::from_str(
-                                    self.code[self.ip as usize].to_string().as_str(),
-                                )
-                                .unwrap();
-                                if instruction == Instruction::JumpBack {
-                                    depth -= 1;
-                                } else if instruction == Instruction::JumpNext {
-                                    depth += 1;
-                                }
-                            }
-                        }
-                    }
-                    Instruction::JumpBack => {
-                        if self.memory[self.dp as usize] != 0 {
-                            let mut depth = 1;
-                            while depth != 0 {
-                                self.ip -= 1;
-                                // println!("depth {}, ip:{}", depth, self.ip);
-                                let instruction = Instruction::from_str(
-                                    self.code[self.ip as usize].to_string().as_str(),
-                                )
-                                .unwrap();
-                                if instruction == Instruction::JumpBack {
-                                    depth += 1;
-                                } else if instruction == Instruction::JumpNext {
-                                    depth -= 1;
-                                }
-                            }
-                        }
+
+            match ins.ins_type {
+                InstructionType::Right => self.dp += ins.argument as u64,
+                InstructionType::Left => self.dp -= ins.argument as u64,
+                InstructionType::Plus => self.memory[self.dp as usize] += ins.argument,
+                InstructionType::Minus => self.memory[self.dp as usize] -= ins.argument,
+                InstructionType::ReadChar => {
+                    for _ in 0..ins.argument {
+                        self.read_char()
                     }
                 }
-                self.ip += 1
+                InstructionType::PutChar => {
+                    for _ in 0..ins.argument {
+                        self.write_char()
+                    }
+                }
+                InstructionType::JumpIfZero => {
+                    if self.memory[self.dp as usize] == 0 {
+                        self.ip = ins.argument as u64;
+                    }
+                }
+                InstructionType::JumpIfNotZero => {
+                    if self.memory[self.dp as usize] != 0 {
+                        self.ip = ins.argument as u64;
+                    }
+                }
             }
+            self.ip += 1
         }
     }
 
