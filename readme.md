@@ -1,7 +1,6 @@
 # Brainfuck ZKVM
 
-- [] build brainfuck vm
-- [] build brainfuck vm with snark
+- [x] build brainfuck vm with compiler
 - [] build brainfuck vm with stark
 
 ### Reference
