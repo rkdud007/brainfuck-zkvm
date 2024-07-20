@@ -1,101 +1,89 @@
 use std::{
-    io::{Read, Stdin, Stdout, Write},
+    io::{stdin, stdout, Read, Write},
     str::FromStr,
 };
 
-use crate::instruction::Instruction;
+use crate::{instruction::Instruction, register::Register};
 
 pub struct Machine {
-    code: Vec<char>,
-    // instruction pointer
-    ip: u64,
-    memory: Vec<u8>,
-    // data pointer
-    dp: u64,
-    // input stream
-    input: Stdin,
-    // output stream
-    output: Stdout,
+    code: Vec<Instruction>,
+    memory: [u8; 30000],
+
     // one byte buffer slice
     buf: [u8; 1],
+    // register
+    register: Register,
 }
 
 impl Machine {
-    pub fn new(code: Vec<char>, input: Stdin, output: Stdout) -> Machine {
+    pub fn new(code: Vec<char>) -> Machine {
+        let code: Vec<Instruction> = code
+            .iter()
+            .map(|c| Instruction::from_str(c.to_string().as_str()).unwrap())
+            .collect();
+
         Machine {
-            code,
-            ip: 0,
-            memory: vec![0; 30000],
-            dp: 0,
-            input,
-            output,
+            code: code.clone(),
+            memory: [0; 30000],
             buf: [0],
+            register: Register::new(code[0], code[1]),
         }
     }
 
-    pub fn execute(self: &mut Machine) {
-        while self.ip < self.code.len() as u64 {
-            let ins_char = self.code[self.ip as usize];
-            // println!(
-            //     "{}, {}, {}",
-            //     ins_char, self.dp, self.memory[self.dp as usize]
-            // );
-            let instruction = Instruction::from_str(ins_char.to_string().as_str());
-            if instruction.is_ok() {
-                match instruction.unwrap() {
-                    Instruction::IncrementDp => self.dp += 1,
-                    Instruction::DecrementDp => self.dp -= 1,
-                    Instruction::IncrementVal => self.memory[self.dp as usize] += 1,
-                    Instruction::DecrementVal => self.memory[self.dp as usize] -= 1,
-                    Instruction::Input => self.read_char(),
-                    Instruction::Output => self.write_char(),
-                    Instruction::JumpNext => {
-                        if self.memory[self.dp as usize] == 0 {
-                            let mut depth = 1;
-                            while depth != 0 {
-                                self.ip += 1;
-                                let instruction = Instruction::from_str(
-                                    self.code[self.ip as usize].to_string().as_str(),
-                                )
-                                .unwrap();
-                                if instruction == Instruction::JumpBack {
-                                    depth -= 1;
-                                } else if instruction == Instruction::JumpNext {
-                                    depth += 1;
-                                }
-                            }
-                        }
-                    }
-                    Instruction::JumpBack => {
-                        if self.memory[self.dp as usize] != 0 {
-                            let mut depth = 1;
-                            while depth != 0 {
-                                self.ip -= 1;
-                                // println!("depth {}, ip:{}", depth, self.ip);
-                                let instruction = Instruction::from_str(
-                                    self.code[self.ip as usize].to_string().as_str(),
-                                )
-                                .unwrap();
-                                if instruction == Instruction::JumpBack {
-                                    depth += 1;
-                                } else if instruction == Instruction::JumpNext {
-                                    depth -= 1;
-                                }
+    pub fn execute(&mut self) {
+        while self.register.ip < self.code.len() as u64 {
+            let instruction = &self.code[self.register.ip as usize];
+
+            match instruction {
+                Instruction::IncrementDp => self.register.mp += 1,
+                Instruction::DecrementDp => self.register.mp -= 1,
+                Instruction::IncrementVal => self.memory[self.register.mp as usize] += 1,
+                Instruction::DecrementVal => self.memory[self.register.mp as usize] -= 1,
+                Instruction::Input => self.read_char(),
+                Instruction::Output => self.write_char(),
+                Instruction::JumpNext => {
+                    if self.memory[self.register.mp as usize] == 0 {
+                        let mut depth = 1;
+                        while depth != 0 {
+                            self.register.ip += 1;
+                            let instruction = &self.code[self.register.ip as usize];
+                            if instruction == &Instruction::JumpBack {
+                                depth -= 1;
+                            } else if instruction == &Instruction::JumpNext {
+                                depth += 1;
                             }
                         }
                     }
                 }
-                self.ip += 1
+                Instruction::JumpBack => {
+                    if self.memory[self.register.mp as usize] != 0 {
+                        let mut depth = 1;
+                        while depth != 0 {
+                            self.register.ip -= 1;
+                            let instruction = &self.code[self.register.ip as usize];
+                            if instruction == &Instruction::JumpBack {
+                                depth += 1;
+                            } else if instruction == &Instruction::JumpNext {
+                                depth -= 1;
+                            }
+                        }
+                    }
+                }
             }
+            self.register.ip += 1;
         }
     }
 
     fn read_char(&mut self) {
-        let input_char: usize = self.input.read(&mut self.buf).unwrap();
-        self.memory[self.dp as usize] = input_char as u8;
+        let mut stdin = stdin();
+        let input_char: usize = stdin.read(&mut self.buf).unwrap();
+        self.memory[self.register.mp as usize] = input_char as u8;
     }
 
     fn write_char(&mut self) {
-        let _ = self.output.write(&[self.memory[self.dp as usize]]).unwrap();
+        let mut stdout = stdout();
+        let _ = stdout
+            .write(&[self.memory[self.register.mp as usize]])
+            .unwrap();
     }
 }

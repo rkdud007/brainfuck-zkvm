@@ -4,9 +4,9 @@ use std::{
 };
 
 use machine::Machine;
-
 pub mod instruction;
 pub mod machine;
+pub mod register;
 
 fn main() {
     println!("Which brainfuck file you want to execute?");
@@ -17,6 +17,6 @@ fn main() {
         .unwrap()
         .replace(' ', "");
     let trimmed_code = code.chars().filter(|c| !c.is_whitespace()).collect();
-    let mut bf_vm = Machine::new(trimmed_code, stdin, stdout());
+    let mut bf_vm = Machine::new(trimmed_code);
     bf_vm.execute();
 }
