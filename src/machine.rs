@@ -31,8 +31,11 @@ impl Machine {
     }
 
     pub fn execute(&mut self) {
+        println!("{:?}", self.code);
         while self.register.ip < self.code.len() as u64 {
             let instruction = &self.code[self.register.ip as usize];
+
+            self.register.ci = *instruction;
 
             match instruction {
                 Instruction::IncrementDp => self.register.mp += 1,
@@ -70,8 +73,17 @@ impl Machine {
                     }
                 }
             }
+
+            let next_instruction = &self.code[self.register.ip as usize];
+            self.register.ni = *next_instruction;
+
+            println!("{:?}", self.register);
+
             self.register.ip += 1;
+            self.register.clk += 1;
         }
+
+        println!("{:?}", self.register);
     }
 
     fn read_char(&mut self) {

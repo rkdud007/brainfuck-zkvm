@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(PartialEq, Debug, Clone, Copy)]
 pub enum Instruction {
     // '>': Increment the data pointer (to point to the next cell to the right).
     IncrementDp,

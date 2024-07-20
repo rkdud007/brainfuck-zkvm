@@ -1,5 +1,6 @@
 use crate::instruction::Instruction;
 
+#[derive(Debug)]
 pub struct Register {
     // cycle
     pub clk: u64,

@@ -1,12 +1,10 @@
-use std::{
-    fs,
-    io::{stdin, stdout},
-};
+use std::{fs, io::stdin};
 
 use machine::Machine;
 pub mod instruction;
 pub mod machine;
 pub mod register;
+pub mod crypto;
 
 fn main() {
     println!("Which brainfuck file you want to execute?");
