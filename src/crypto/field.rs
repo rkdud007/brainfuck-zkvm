@@ -3,10 +3,10 @@ use std::ops::Mul;
 /// FieldElement is a wrapper around a usize that represents a field element in a finite field.
 /// Goldilocks prime is 2^64 - 2^32 + 1
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
-pub struct FieldElement(pub usize);
+pub struct FieldElement(pub u64);
 
 impl FieldElement {
-    pub const fn modulus() -> usize {
+    pub const fn modulus() -> u64 {
         // p = 2^64 - 2^32 + 1
         //  = 1 + 3 * 5 * 17 * 257 * 65537 * 2^32
         //   = 1 + 4294967295 * 2^32
@@ -32,7 +32,7 @@ impl FieldElement {
         }
         FieldElement(
             ((x % Self::modulus() as i128 + Self::modulus() as i128) % Self::modulus() as i128)
-                as usize,
+                as u64,
         )
     }
 
@@ -49,6 +49,12 @@ impl FieldElement {
             let (gcd, x, y) = Self::extended_gcd(b, a % b);
             (gcd, y, x - (a / b) * y)
         }
+    }
+}
+
+impl From<u64> for FieldElement {
+    fn from(value: u64) -> Self {
+        Self(value)
     }
 }
 
@@ -79,7 +85,7 @@ impl std::ops::Mul for FieldElement {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self::Output {
-        Self(((self.0 as u128 * rhs.0 as u128) % Self::modulus() as u128) as usize)
+        Self(((self.0 as u128 * rhs.0 as u128) % Self::modulus() as u128) as u64)
     }
 }
 

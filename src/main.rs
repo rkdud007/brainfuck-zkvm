@@ -23,6 +23,6 @@ fn main() {
     let mut bf_compiler = Compiler::new(code);
     let ins = bf_compiler.compile();
     println!("{:#?}", ins);
-    let mut bf_vm = Machine::new(ins, stdin, stdout);
-    bf_vm.execute();
+    //let mut bf_vm = Machine::new(ins, stdin, stdout);
+    // bf_vm.execute();
 }
