@@ -7,6 +7,7 @@ use compiler::Compiler;
 use machine::Machine;
 
 pub mod compiler;
+pub mod crypto;
 pub mod instruction;
 pub mod machine;
 
