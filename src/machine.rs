@@ -1,79 +1,151 @@
-use std::io::{Read, Stdin, Stdout, Write};
+use std::{
+    error::Error,
+    io::{Read, Stdin, Stdout, Write},
+    str::FromStr,
+};
 
-use crate::instruction::{Instruction, InstructionType};
+use crate::{crypto::field::FieldElement, instruction::InstructionType, registers::Registers};
+
+pub struct ProgramMemory {
+    code: Vec<FieldElement>,
+}
+
+pub struct MutableState {
+    ram: Vec<FieldElement>,
+    registers: Registers,
+}
+
+pub struct IO {
+    input: Box<dyn Read>,
+    output: Box<dyn Write>,
+}
 
 pub struct Machine {
-    code: Vec<Instruction>,
-    // instruction pointer
-    ip: u64,
-    memory: Vec<u8>,
-    // data pointer
-    dp: u64,
-    // input stream
-    input: Stdin,
-    // output stream
-    output: Stdout,
-    // one byte buffer slice
-    buf: [u8; 1],
+    program: ProgramMemory,
+    state: MutableState,
+    io: IO,
 }
 
 impl Machine {
-    pub fn new(code: Vec<Instruction>, input: Stdin, output: Stdout) -> Machine {
+    pub fn new(code: Vec<FieldElement>, input: Stdin, output: Stdout) -> Machine {
         Machine {
-            code,
-            ip: 0,
-            memory: vec![0; 30000],
-            dp: 0,
-            input,
-            output,
-            buf: [0],
+            program: ProgramMemory { code },
+            state: MutableState {
+                ram: vec![FieldElement::zero(); 100],
+                registers: Registers::new(),
+            },
+            io: IO {
+                input: Box::new(input),
+                output: Box::new(output),
+            },
         }
     }
 
-    pub fn execute(self: &mut Machine) {
-        while self.ip < self.code.len() as u64 {
-            let ins = &self.code[self.ip as usize];
-            // println!(
-            //     "{}, {}, {}",
-            //     ins_char, self.dp, self.memory[self.dp as usize]
-            // );
+    pub fn execute(&mut self) -> Result<(), Box<dyn Error>> {
+        self.state.registers.ci = self.program.code[self.state.registers.ip.to_usize()];
+        self.state.registers.ni = self.program.code[self.state.registers.ip.to_usize() + 1];
+        let target_ci = self.program.code[self.state.registers.ip.to_usize()];
+        let ins_type =
+            InstructionType::from_str(&(target_ci.to_usize() as u8 as char).to_string()).unwrap();
 
-            match ins.ins_type {
-                InstructionType::Right => self.dp += ins.argument as u64,
-                InstructionType::Left => self.dp -= ins.argument as u64,
-                InstructionType::Plus => self.memory[self.dp as usize] += ins.argument,
-                InstructionType::Minus => self.memory[self.dp as usize] -= ins.argument,
-                InstructionType::ReadChar => {
-                    for _ in 0..ins.argument {
-                        self.read_char()
-                    }
-                }
-                InstructionType::PutChar => {
-                    for _ in 0..ins.argument {
-                        self.write_char()
-                    }
-                }
-                InstructionType::JumpIfZero => {
-                    if self.memory[self.dp as usize] == 0 {
-                        self.ip = ins.argument as u64;
-                    }
-                }
-                InstructionType::JumpIfNotZero => {
-                    if self.memory[self.dp as usize] != 0 {
-                        self.ip = ins.argument as u64;
-                    }
-                }
+        println!(
+            "clk:{}, ip: {}, ci: {}, ni: {}, mp: {}, mv: {}, mvi: {}",
+            self.state.registers.clk,
+            self.state.registers.ip,
+            self.state.registers.ci,
+            self.state.registers.ni,
+            self.state.registers.mp,
+            self.state.registers.mv,
+            self.state.registers.mvi,
+        );
+        self.execute_instruction(ins_type)?;
+        // let trace: Vec<Registers> = Vec::new();
+        while self.state.registers.ip.to_usize() < self.program.code.len() {
+            self.state.registers.clk += FieldElement::one();
+            self.state.registers.ip += FieldElement::one();
+            let target_ci = self.program.code[self.state.registers.ip.to_usize()];
+            let ins_type =
+                InstructionType::from_str(&(target_ci.to_usize() as u8 as char).to_string())
+                    .unwrap();
+            self.state.registers.ni = self.program.code[self.state.registers.ip.to_usize() + 1];
+            println!(
+                "clk:{}, ip: {}, ci: {}, ni: {}, mp: {}, mv: {}, mvi: {}",
+                self.state.registers.clk,
+                self.state.registers.ip,
+                target_ci,
+                self.state.registers.ni,
+                self.state.registers.mp,
+                self.state.registers.mv,
+                self.state.registers.mvi,
+            );
+            self.execute_instruction(ins_type)?;
+        }
+        Ok(())
+    }
+
+    fn read_char(&mut self) -> Result<(), std::io::Error> {
+        let mut buf = [0; 1];
+        self.io.input.read_exact(&mut buf)?;
+        let input_char = buf[0] as usize;
+        self.state.ram[self.state.registers.mp.to_usize()] = FieldElement::from(input_char as u64);
+        Ok(())
+    }
+
+    fn write_char(&mut self) -> Result<(), std::io::Error> {
+        let char_to_write = self.state.ram[self.state.registers.mp.to_usize()].to_usize() as u8;
+        self.io.output.write_all(&[char_to_write])?;
+        Ok(())
+    }
+
+    fn execute_instruction(&mut self, ins: InstructionType) -> Result<(), Box<dyn Error>> {
+        match ins {
+            InstructionType::Right => {
+                self.state.registers.mp += FieldElement::one();
             }
-            self.ip += 1
+            InstructionType::Left => {
+                self.state.registers.mp -= FieldElement::one();
+            }
+            InstructionType::Plus => {
+                let mp = self.state.registers.mp.to_usize();
+                self.state.ram[mp] += FieldElement::one();
+            }
+            InstructionType::Minus => {
+                let mp = self.state.registers.mp.to_usize();
+                self.state.ram[mp] -= FieldElement::one();
+            }
+            InstructionType::ReadChar => {
+                self.read_char()?;
+            }
+            InstructionType::PutChar => {
+                self.write_char()?;
+            }
+            InstructionType::JumpIfZero => {
+                let mp = self.state.registers.mp.to_usize();
+                let argument = self.program.code[mp + 1];
+                self.state.registers.ni = argument;
+                if self.state.ram[mp] == FieldElement::zero() {
+                    self.state.registers.ip = argument;
+                    return Ok(());
+                }
+                self.state.registers.ip += FieldElement::one();
+            }
+            InstructionType::JumpIfNotZero => {
+                let mp = self.state.registers.mp.to_usize();
+                let argument = self.program.code[mp + 1];
+                if self.state.ram[mp] != FieldElement::zero() {
+                    self.state.registers.ip = argument;
+                    return Ok(());
+                }
+                self.state.registers.ip += FieldElement::one();
+            }
         }
-    }
+        self.state.registers.mv = self.state.ram[self.state.registers.mp.to_usize()];
+        self.state.registers.mvi = if self.state.registers.mv == FieldElement::zero() {
+            FieldElement::zero()
+        } else {
+            self.state.registers.mv.inverse()
+        };
 
-    fn read_char(&mut self) {
-        let input_char: usize = self.input.read(&mut self.buf).unwrap();
-        self.memory[self.dp as usize] = input_char as u8;
-    }
-
-    fn write_char(&mut self) {
-        let _ = self.output.write(&[self.memory[self.dp as usize]]).unwrap();
+        Ok(())
     }
 }

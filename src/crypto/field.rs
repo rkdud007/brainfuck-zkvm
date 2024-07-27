@@ -42,13 +42,16 @@ impl FieldElement {
     /// if b == 0, then a is the gcd, x = 1, y = 0
     /// if b != 0, then gcd(b, a % b), x = y - (a / b) * x, y = x
     fn extended_gcd(a: i128, b: i128) -> (i128, i128, i128) {
-        println!("a: {}, b: {}", a, b);
         if b == 0 {
             (a, 1, 0)
         } else {
             let (gcd, x, y) = Self::extended_gcd(b, a % b);
             (gcd, y, x - (a / b) * y)
         }
+    }
+
+    pub fn to_usize(self) -> usize {
+        self.0 as usize
     }
 }
 
@@ -94,6 +97,24 @@ impl std::ops::Div for FieldElement {
 
     fn div(self, rhs: Self) -> Self::Output {
         rhs.inverse().mul(self)
+    }
+}
+
+impl std::ops::AddAssign for FieldElement {
+    fn add_assign(&mut self, rhs: Self) {
+        *self = *self + rhs;
+    }
+}
+
+impl std::ops::SubAssign for FieldElement {
+    fn sub_assign(&mut self, rhs: Self) {
+        *self = *self - rhs;
+    }
+}
+
+impl std::fmt::Display for FieldElement {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
