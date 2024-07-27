@@ -23,7 +23,7 @@ fn main() {
         .replace(' ', "");
     let mut bf_compiler = Compiler::new(code);
     let ins = bf_compiler.compile();
-    println!("{:?}", ins);
+    println!("\nInstruction\n: {:?}", ins);
     let mut bf_vm = Machine::new(ins, stdin, stdout);
-    bf_vm.execute();
+    bf_vm.execute().unwrap();
 }

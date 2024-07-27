@@ -27,7 +27,7 @@ impl Compiler {
                 ']' => {
                     let start_pos = loop_stack.pop().unwrap();
                     let loop_end_pos = self.instructions.len() as u8 + 1;
-                    self.instructions[start_pos] = FieldElement::from(loop_end_pos as u64);
+                    self.instructions[start_pos] = FieldElement::from((loop_end_pos - 1) as u64);
                     self.instructions
                         .push(FieldElement::from((start_pos + 1) as u64));
                 }
