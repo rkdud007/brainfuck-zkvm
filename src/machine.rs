@@ -61,7 +61,12 @@ impl Machine {
             // ============================
             self.next_clock_cycle();
             self.state.registers.ci = self.program.code[self.state.registers.ip.to_usize()];
-            self.state.registers.ni = self.program.code[self.state.registers.ip.to_usize() + 1];
+            self.state.registers.ni =
+                if self.state.registers.ip.to_usize() == self.program.code.len() - 1 {
+                    FieldElement::zero()
+                } else {
+                    self.program.code[self.state.registers.ip.to_usize() + 1]
+                };
             self.write_trace();
             let ins_type = InstructionType::from_u8(self.state.registers.ci.to_usize() as u8);
             self.execute_instruction(ins_type)?;
