@@ -88,7 +88,6 @@ impl Machine {
     fn write_char(&mut self) -> Result<(), std::io::Error> {
         let char_to_write = self.state.ram[self.state.registers.mp.to_usize()].to_usize() as u8;
         self.io.output.write_all(&[char_to_write])?;
-        println!("\n");
         Ok(())
     }
 
@@ -152,7 +151,10 @@ impl Machine {
     }
 
     fn write_trace(&mut self) {
-        println!("{}", self.state.registers);
         self.trace.push(self.state.registers.clone());
+    }
+
+    pub fn get_trace(&self) -> Vec<Registers> {
+        self.trace.clone()
     }
 }

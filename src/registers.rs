@@ -47,3 +47,13 @@ impl std::fmt::Display for Registers {
         )
     }
 }
+
+impl std::fmt::Debug for Registers {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "clk:{}, ip: {}, ci: {}, ni: {}, mp: {}, mv: {}, mvi: {}",
+            self.clk, self.ip, self.ci, self.ni, self.mp, self.mv, self.mvi
+        )
+    }
+}
