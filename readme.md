@@ -67,6 +67,7 @@ Idea from:
 
 - https://starkware.co/stark-101/
 - https://aszepieniec.github.io/stark-anatomy/
+- https://github.com/lambdaclass/STARK101-rs
 
 **Brainfuck**
 
