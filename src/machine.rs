@@ -24,6 +24,7 @@ pub struct Machine {
     program: ProgramMemory,
     state: MutableState,
     io: IO,
+    trace: Vec<Registers>,
 }
 
 impl Machine {
@@ -38,35 +39,41 @@ impl Machine {
                 input: Box::new(input),
                 output: Box::new(output),
             },
+            trace: vec![],
         }
     }
 
     pub fn execute(&mut self) -> Result<(), Box<dyn Error>> {
+        // =============================
+        // First clock cycle
+        // =============================
         self.state.registers.ci = self.program.code[self.state.registers.ip.to_usize()];
         self.state.registers.ni = self.program.code[self.state.registers.ip.to_usize() + 1];
         let target_ci = self.state.registers.ci;
         let ins_type =
             InstructionType::from_str(&(target_ci.to_usize() as u8 as char).to_string()).unwrap();
-
-        println!("register: {}", self.state.registers);
+        self.write_trace();
         self.execute_instruction(ins_type)?;
-        // let trace: Vec<Registers> = Vec::new();
-        while self.state.registers.ip.to_usize() < self.program.code.len() - 1 {
-            self.state.registers.clk += FieldElement::one();
-            self.state.registers.ip += FieldElement::one();
-            let target_ci = self.program.code[self.state.registers.ip.to_usize()];
 
-            let ins_type =
-                InstructionType::from_str(&(target_ci.to_usize() as u8 as char).to_string())
-                    .unwrap();
+        while self.state.registers.ip.to_usize() < self.program.code.len() - 1 {
+            // ============================
+            // Middle clock cycles
+            // ============================
+            self.next_clock_cycle();
+            self.state.registers.ci = self.program.code[self.state.registers.ip.to_usize()];
             self.state.registers.ni = self.program.code[self.state.registers.ip.to_usize() + 1];
-            println!("register: {}", self.state.registers);
+            self.write_trace();
+            let ins_type = InstructionType::from_u8(self.state.registers.ci.to_usize() as u8);
             self.execute_instruction(ins_type)?;
         }
 
-        self.state.registers.clk += FieldElement::one();
-        self.state.registers.ip += FieldElement::one();
-        println!("register: {}", self.state.registers);
+        // ============================
+        // Last clock cycle
+        // ============================
+        self.next_clock_cycle();
+        self.state.registers.ci = FieldElement::zero();
+        self.state.registers.ni = FieldElement::zero();
+        self.write_trace();
         Ok(())
     }
 
@@ -137,5 +144,15 @@ impl Machine {
         };
 
         Ok(())
+    }
+
+    fn next_clock_cycle(&mut self) {
+        self.state.registers.clk += FieldElement::one();
+        self.state.registers.ip += FieldElement::one();
+    }
+
+    fn write_trace(&mut self) {
+        println!("{}", self.state.registers);
+        self.trace.push(self.state.registers.clone());
     }
 }

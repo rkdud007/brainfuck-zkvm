@@ -58,3 +58,9 @@ impl ToString for InstructionType {
         }
     }
 }
+
+impl InstructionType {
+    pub fn from_u8(ins: u8) -> Self {
+        Self::from_str(&(ins as char).to_string()).expect("Invalid instruction")
+    }
+}

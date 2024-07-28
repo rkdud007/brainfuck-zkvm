@@ -1,5 +1,6 @@
 use crate::crypto::field::FieldElement;
 
+#[derive(Clone)]
 pub struct Registers {
     /// cycle
     pub clk: FieldElement,
