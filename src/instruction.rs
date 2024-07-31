@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{fmt::Display, str::FromStr};
 
 #[derive(Debug, Clone)]
 pub struct Instruction {
@@ -44,18 +44,19 @@ impl FromStr for InstructionType {
     }
 }
 
-impl ToString for InstructionType {
-    fn to_string(&self) -> String {
-        match self {
-            InstructionType::Right => ">".to_string(),
-            InstructionType::Left => "<".to_string(),
-            InstructionType::Plus => "+".to_string(),
-            InstructionType::Minus => "-".to_string(),
-            InstructionType::PutChar => ".".to_string(),
-            InstructionType::ReadChar => ",".to_string(),
-            InstructionType::JumpIfZero => "[".to_string(),
-            InstructionType::JumpIfNotZero => "]".to_string(),
-        }
+impl Display for InstructionType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let symbol = match self {
+            InstructionType::Right => ">",
+            InstructionType::Left => "<",
+            InstructionType::Plus => "+",
+            InstructionType::Minus => "-",
+            InstructionType::PutChar => ".",
+            InstructionType::ReadChar => ",",
+            InstructionType::JumpIfZero => "[",
+            InstructionType::JumpIfNotZero => "]",
+        };
+        write!(f, "{}", symbol)
     }
 }
 

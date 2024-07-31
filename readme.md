@@ -4,6 +4,7 @@
 - [ ] build brainfuck vm with stark
   - [x] Execution Trace
   - [ ] STARK Prover
+    - [ ] Write Constraint
   - [ ] STARK Verifier
 
 ### Compiler
@@ -67,6 +68,7 @@ Idea from:
 
 - https://starkware.co/stark-101/
 - https://aszepieniec.github.io/stark-anatomy/
+- https://github.com/lambdaclass/STARK101-rs
 
 **Brainfuck**
 

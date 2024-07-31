@@ -36,6 +36,14 @@ impl FieldElement {
         )
     }
 
+    pub fn pow(self, rhs: FieldElement) -> FieldElement {
+        let mut result = FieldElement::one();
+        for _ in 0..rhs.to_usize() {
+            result = result * self
+        }
+        result
+    }
+
     /// Extended Euclidean Algorithm
     /// a * x + b * y = gcd(a, b)
     ///
@@ -61,6 +69,21 @@ impl From<u64> for FieldElement {
     }
 }
 
+impl From<usize> for FieldElement {
+    fn from(value: usize) -> Self {
+        Self(value as u64)
+    }
+}
+
+impl From<i32> for FieldElement {
+    fn from(value: i32) -> Self {
+        if value < 0 {
+            panic!("value should be positive")
+        }
+        Self(value as u64)
+    }
+}
+
 impl std::ops::Neg for FieldElement {
     type Output = Self;
     fn neg(self) -> Self::Output {
@@ -72,7 +95,7 @@ impl std::ops::Add for FieldElement {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-        Self((self.0 + rhs.0) % Self::modulus())
+        Self(((self.0 as u128 + rhs.0 as u128) % (Self::modulus() as u128)) as u64)
     }
 }
 
@@ -80,7 +103,10 @@ impl std::ops::Sub for FieldElement {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        Self((self.0 + Self::modulus() - rhs.0) % Self::modulus())
+        Self(
+            ((self.0 as u128 + Self::modulus() as u128 - rhs.0 as u128) % (Self::modulus() as u128))
+                as u64,
+        )
     }
 }
 
