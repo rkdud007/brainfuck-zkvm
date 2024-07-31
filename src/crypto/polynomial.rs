@@ -8,7 +8,7 @@ pub struct Polynomial(pub Vec<FieldElement>);
 
 impl Polynomial {
     pub fn new(coefficient: Vec<FieldElement>) -> Self {
-        if coefficient.len() == 0 {
+        if coefficient.is_empty() {
             panic!("polynomial should have at least one coefficient!")
         }
         Self(coefficient)
@@ -68,7 +68,7 @@ impl Polynomial {
 
     ///Return degree of polynomial
     pub fn degree(&self) -> usize {
-        if self.0.len() == 0 {
+        if self.0.is_empty() {
             panic!("polynomial should have at least one coefficient!")
         }
         self.0.len() - 1
@@ -95,7 +95,7 @@ impl std::ops::Add for Polynomial {
         let mut result_polynomial = longer;
         let diff = result_polynomial.degree() - shorter.degree();
         for (i, elem) in shorter.0.into_iter().enumerate() {
-            result_polynomial.0[diff + i] = result_polynomial.0[diff + i] + elem;
+            result_polynomial.0[diff + i] += elem;
         }
         result_polynomial
     }
@@ -113,7 +113,7 @@ impl std::ops::Sub for Polynomial {
         let mut result_polynomial = longer;
         let diff = result_polynomial.degree() - shorter.degree();
         for (i, elem) in shorter.0.into_iter().enumerate() {
-            result_polynomial.0[diff + i] = result_polynomial.0[diff + i] - elem;
+            result_polynomial.0[diff + i] -= elem;
         }
         result_polynomial
     }
@@ -124,7 +124,7 @@ impl std::ops::Mul for Polynomial {
 
     // [1,0] * [-2,0] = [-2,0,0]
     fn mul(self, rhs: Self) -> Self::Output {
-        let mut res = [FieldElement::zero()].repeat((self.degree() + rhs.degree() + 1) as usize);
+        let mut res = [FieldElement::zero()].repeat(self.degree() + rhs.degree() + 1);
         for (i, c1) in self.0.clone().into_iter().enumerate() {
             for (j, c2) in rhs.0.clone().into_iter().enumerate() {
                 if let Some(value) = res.get_mut(i + j) {
@@ -186,8 +186,8 @@ fn test_polynomial_sub() {
         c.0,
         vec![
             FieldElement::from(5),
-            FieldElement::from(-FieldElement::from(3)),
-            FieldElement::from(-FieldElement::from(1)),
+            (-FieldElement::from(3)),
+            (-FieldElement::from(1)),
             FieldElement::from(8),
         ]
     )

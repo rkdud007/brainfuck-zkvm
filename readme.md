@@ -4,6 +4,7 @@
 - [ ] build brainfuck vm with stark
   - [x] Execution Trace
   - [ ] STARK Prover
+    - [ ] Write Constraint
   - [ ] STARK Verifier
 
 ### Compiler
